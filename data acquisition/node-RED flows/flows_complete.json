@@ -1,0 +1,567 @@
+[
+    {
+        "id": "802efeb2d03eac0f",
+        "type": "tab",
+        "label": "Flow 8",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "7a7270bf3f623b7c",
+        "type": "debug",
+        "z": "802efeb2d03eac0f",
+        "name": "Check MQTT content",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 440,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "59a7ac9cec8f2a95",
+        "type": "mqtt in",
+        "z": "802efeb2d03eac0f",
+        "name": "Read Environment",
+        "topic": "{your_MQTT_topic}",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "fad1c26427eb2bd5",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 440,
+        "wires": [
+            [
+                "7a7270bf3f623b7c",
+                "d699b12f17345f68"
+            ]
+        ]
+    },
+    {
+        "id": "d699b12f17345f68",
+        "type": "template",
+        "z": "802efeb2d03eac0f",
+        "name": "INSERT sensor",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "INSERT INTO t_sensor(lat, lon, temp, humidity, co) VALUES ({{payload.lat}}, {{payload.lon}}, {{payload.temp}}, {{payload.humidity}}, {{payload.co}})",
+        "output": "str",
+        "x": 440,
+        "y": 440,
+        "wires": [
+            [
+                "a296c7746d35a2b2"
+            ]
+        ]
+    },
+    {
+        "id": "a296c7746d35a2b2",
+        "type": "mysql",
+        "z": "802efeb2d03eac0f",
+        "mydb": "b7aa8f17ce7a0edf",
+        "name": "kidbright db",
+        "x": 810,
+        "y": 380,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f0fb4c188eda5720",
+        "type": "template",
+        "z": "802efeb2d03eac0f",
+        "name": "INSERT API",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "INSERT INTO t_api(latitude, longitude, wind_sp, wind_deg, pressure, temperature, humidity, cloud_per, rain_amt, weather) VALUES ({{payload.lat}}, {{payload.lon}}, {{payload.wind_sp}}, {{payload.wind_sp}}, {{payload.pressure}}, {{payload.temp}}, {{payload.humid}}, {{payload.cloud}}, {{payload.rain}}, \"{{payload.desc}}\")",
+        "output": "str",
+        "x": 450,
+        "y": 380,
+        "wires": [
+            [
+                "a296c7746d35a2b2"
+            ]
+        ]
+    },
+    {
+        "id": "c7fcab8c2d019b39",
+        "type": "function",
+        "z": "802efeb2d03eac0f",
+        "name": "Get weather data from JSON",
+        "func": "const data_json = msg.payload\nlet rainfall\nif (data_json.hasOwnProperty(\"rain\")){\n    rainfall = data_json.rain[\"1h\"]\n} else {\n    rainfall = 0\n}\nmsg.payload = {\n    \"lat\": data_json.coord.lat,\n    \"lon\": data_json.coord.lon,\n    \"wind_sp\": data_json.wind.speed,\n    \"wind_deg\": data_json.wind.deg,\n    \"pressure\": data_json.main.pressure,\n    \"temp\": data_json.main.temp,\n    \"humid\":data_json.main.humidity,\n    \"cloud\": data_json.clouds.all,\n    \"rain\" : rainfall,\n    \"desc\": data_json.weather[0].description\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 220,
+        "y": 260,
+        "wires": [
+            [
+                "20454312d56b9275",
+                "f0fb4c188eda5720",
+                "9a1da0e4300b151f"
+            ]
+        ]
+    },
+    {
+        "id": "7cf02429464859d6",
+        "type": "json",
+        "z": "802efeb2d03eac0f",
+        "name": "Get JSON from API",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 150,
+        "y": 200,
+        "wires": [
+            [
+                "c7fcab8c2d019b39"
+            ]
+        ]
+    },
+    {
+        "id": "20454312d56b9275",
+        "type": "debug",
+        "z": "802efeb2d03eac0f",
+        "name": "Check JSON content",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "c92467b27ba36797",
+        "type": "http request",
+        "z": "802efeb2d03eac0f",
+        "name": "Request from Open Weather API",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://api.openweathermap.org/data/2.5/weather?lat={your_lat}&lon={your_lon}&appid={your_api_key}&units=metric",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 520,
+        "y": 80,
+        "wires": [
+            [
+                "7cf02429464859d6"
+            ]
+        ]
+    },
+    {
+        "id": "b3d854138a006cd8",
+        "type": "inject",
+        "z": "802efeb2d03eac0f",
+        "name": "Nak Niwat flow",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/30 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 80,
+        "wires": [
+            [
+                "68a1d2ad704b8d70"
+            ]
+        ]
+    },
+    {
+        "id": "de0cb851d9f1b3d2",
+        "type": "complete",
+        "z": "802efeb2d03eac0f",
+        "name": "",
+        "scope": [
+            "d699b12f17345f68"
+        ],
+        "uncaught": false,
+        "x": 150,
+        "y": 120,
+        "wires": [
+            [
+                "c92467b27ba36797"
+            ]
+        ]
+    },
+    {
+        "id": "a95f8b4fa23d4f0a",
+        "type": "template",
+        "z": "802efeb2d03eac0f",
+        "name": "INSERT cleaned",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "INSERT INTO t_cleaned(ts, location, wind_sp, wind_deg, pressure, temperature, humidity, cloud_per, rain_amt, weather) VALUES (\"{{payload.ts}}\", \"Nak Niwat 48\", {{payload.wind_sp}}, {{payload.wind_deg}}, {{payload.pressure}}, {{payload.temp}}, {{payload.humid}}, {{payload.cloud}}, {{payload.rain}}, \"{{payload.desc}}\") ON DUPLICATE KEY UPDATE wind_sp={{payload.wind_sp}}, wind_deg={{payload.wind_deg}}, pressure={{payload.pressure}}, temperature={{payload.temp}}, humidity={{payload.humid}}, cloud_per={{payload.cloud}}, rain_amt={{payload.rain}}, weather=\"{{payload.desc}}\"",
+        "output": "str",
+        "x": 510,
+        "y": 320,
+        "wires": [
+            [
+                "a296c7746d35a2b2"
+            ]
+        ]
+    },
+    {
+        "id": "9a1da0e4300b151f",
+        "type": "function",
+        "z": "802efeb2d03eac0f",
+        "name": "get aggregate time",
+        "func": "const time =  new Date(Date.now())\nvar coeff = 1000 * 60 * 30;\nconst agg_time = new Date(Math.floor(time.getTime() / coeff) * coeff)\nconst ts = agg_time.toISOString().split('T')[0] + \" \" + agg_time.toTimeString().split(' ')[0]\nmsg.payload.ts = ts\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 510,
+        "y": 260,
+        "wires": [
+            [
+                "a95f8b4fa23d4f0a"
+            ]
+        ]
+    },
+    {
+        "id": "ad582cc5d9f621de",
+        "type": "inject",
+        "z": "802efeb2d03eac0f",
+        "name": "Kaset flow",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/30 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 560,
+        "wires": [
+            [
+                "35c11f07041aabc1"
+            ]
+        ]
+    },
+    {
+        "id": "029b34a9e136e39c",
+        "type": "json",
+        "z": "802efeb2d03eac0f",
+        "name": "Get JSON from API",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 150,
+        "y": 620,
+        "wires": [
+            [
+                "a36c3ce036f789a7"
+            ]
+        ]
+    },
+    {
+        "id": "a36c3ce036f789a7",
+        "type": "function",
+        "z": "802efeb2d03eac0f",
+        "name": "Get weather data from JSON",
+        "func": "const data_json = msg.payload\nlet rainfall\nif (data_json.hasOwnProperty(\"rain\")){\n    rainfall = data_json.rain[\"1h\"]\n} else {\n    rainfall = 0\n}\nmsg.payload = {\n    \"lat\": data_json.coord.lat,\n    \"lon\": data_json.coord.lon,\n    \"wind_sp\": data_json.wind.speed,\n    \"wind_deg\": data_json.wind.deg,\n    \"pressure\": data_json.main.pressure,\n    \"temp\": data_json.main.temp,\n    \"humid\":data_json.main.humidity,\n    \"cloud\": data_json.clouds.all,\n    \"rain\" : rainfall,\n    \"desc\": data_json.weather[0].description\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 620,
+        "wires": [
+            [
+                "879011c4ad7f01c3"
+            ]
+        ]
+    },
+    {
+        "id": "879011c4ad7f01c3",
+        "type": "function",
+        "z": "802efeb2d03eac0f",
+        "name": "get aggregate time",
+        "func": "const time =  new Date(Date.now())\nvar coeff = 1000 * 60 * 30;\nconst agg_time = new Date(Math.round(time.getTime() / coeff) * coeff)\nconst ts = agg_time.toISOString().split('T')[0] + \" \" + agg_time.toTimeString().split(' ')[0]\nmsg.payload.ts = ts\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 620,
+        "wires": [
+            [
+                "c12683bd34dba9aa"
+            ]
+        ]
+    },
+    {
+        "id": "c12683bd34dba9aa",
+        "type": "template",
+        "z": "802efeb2d03eac0f",
+        "name": "INSERT cleaned",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "INSERT INTO t_cleaned(ts, location, wind_sp, wind_deg, pressure, temperature, humidity, cloud_per, rain_amt, weather) VALUES (\"{{payload.ts}}\", \"Nak Niwat 48\", {{payload.wind_sp}}, {{payload.wind_deg}}, {{payload.pressure}}, {{payload.temp}}, {{payload.humid}}, {{payload.cloud}}, {{payload.rain}}, \"{{payload.desc}}\") ON DUPLICATE KEY UPDATE wind_sp={{payload.wind_sp}}, wind_deg={{payload.wind_deg}}, pressure={{payload.pressure}}, temperature={{payload.temp}}, humidity={{payload.humid}}, cloud_per={{payload.cloud}}, rain_amt={{payload.rain}}, weather=\"{{payload.desc}}\"",
+        "output": "str",
+        "x": 770,
+        "y": 520,
+        "wires": [
+            [
+                "a296c7746d35a2b2"
+            ]
+        ]
+    },
+    {
+        "id": "3a1c0586be5e7bbd",
+        "type": "http request",
+        "z": "802efeb2d03eac0f",
+        "name": "Request from Open Weather API",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://api.openweathermap.org/data/2.5/weather?lat={your_lat}&lon={your_lon}&appid={your_api_key}&units=metric",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 480,
+        "y": 560,
+        "wires": [
+            [
+                "029b34a9e136e39c"
+            ]
+        ]
+    },
+    {
+        "id": "7a2d5fb6707c2ce5",
+        "type": "inject",
+        "z": "802efeb2d03eac0f",
+        "name": "Update Cleaned",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/30 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 700,
+        "wires": [
+            [
+                "a3a01dfae2f0c521"
+            ]
+        ]
+    },
+    {
+        "id": "cad765ea2ce4d58f",
+        "type": "template",
+        "z": "802efeb2d03eac0f",
+        "name": "Aggregate sensors",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "UPDATE t_cleaned t\nJOIN (\n    SELECT \n        ADDDATE(DATE(ws.ts), INTERVAL HOUR(ws.ts) HOUR) + INTERVAL FLOOR(MINUTE(ws.ts) / 30) * 30 MINUTE AS ts_agg,\n        AVG(ws.temperature) AS temperature,\n        AVG(ws.humidity) AS humidity\n    FROM \n        t_sensor ws\n    WHERE \n        (MINUTE(NOW()) < 30 AND ws.ts >= DATE_FORMAT(NOW() - INTERVAL 1 HOUR, '%Y-%m-%d %H:30:00') \n        AND ws.ts < DATE_FORMAT(NOW(), '%Y-%m-%d %H:00:00')) \n        OR \n        (MINUTE(NOW()) >= 30 AND ws.ts >= DATE_FORMAT(NOW(), '%Y-%m-%d %H:00:00') \n        AND ws.ts < DATE_FORMAT(NOW(), '%Y-%m-%d %H:30:00'))\n    GROUP BY \n        ts_agg\n) AS aggregated_data ON t.ts = aggregated_data.ts_agg\nSET \n    t.temperature = aggregated_data.temperature,\n    t.humidity = aggregated_data.humidity\nWHERE \n    t.location = 'Nak Niwat 48';",
+        "output": "str",
+        "x": 550,
+        "y": 700,
+        "wires": [
+            [
+                "185bc302ee1dd7d4"
+            ]
+        ]
+    },
+    {
+        "id": "a3a01dfae2f0c521",
+        "type": "delay",
+        "z": "802efeb2d03eac0f",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "3",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 340,
+        "y": 700,
+        "wires": [
+            [
+                "cad765ea2ce4d58f"
+            ]
+        ]
+    },
+    {
+        "id": "185bc302ee1dd7d4",
+        "type": "mysql",
+        "z": "802efeb2d03eac0f",
+        "mydb": "b7aa8f17ce7a0edf",
+        "name": "kidbright db",
+        "x": 810,
+        "y": 700,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "68a1d2ad704b8d70",
+        "type": "delay",
+        "z": "802efeb2d03eac0f",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "3",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 300,
+        "y": 80,
+        "wires": [
+            [
+                "c92467b27ba36797"
+            ]
+        ]
+    },
+    {
+        "id": "35c11f07041aabc1",
+        "type": "delay",
+        "z": "802efeb2d03eac0f",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "3",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 260,
+        "y": 560,
+        "wires": [
+            [
+                "3a1c0586be5e7bbd"
+            ]
+        ]
+    },
+    {
+        "id": "fad1c26427eb2bd5",
+        "type": "mqtt-broker",
+        "name": "KU-CPE-broker",
+        "broker": "iot.cpe.ku.ac.th",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "b7aa8f17ce7a0edf",
+        "type": "MySQLdatabase",
+        "name": "helloworld db",
+        "host": "iot.cpe.ku.ac.th",
+        "port": "3306",
+        "db": "b6610545766",
+        "tz": "",
+        "charset": "UTF8"
+    }
+]

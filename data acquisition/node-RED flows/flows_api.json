@@ -1,0 +1,158 @@
+[
+    {
+        "id": "2ddae0a3bd4d807a",
+        "type": "tab",
+        "label": "Flow 5",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "4de92a26ee01d4b0",
+        "type": "http request",
+        "z": "2ddae0a3bd4d807a",
+        "name": "Request from Open Weather API",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://api.openweathermap.org/data/2.5/weather?lat={your_lat}&lon={your_lon}&appid={your_api_key}&units=metric",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 400,
+        "y": 160,
+        "wires": [
+            [
+                "76e1294f67687383"
+            ]
+        ]
+    },
+    {
+        "id": "76e1294f67687383",
+        "type": "json",
+        "z": "2ddae0a3bd4d807a",
+        "name": "Get JSON from API",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 190,
+        "y": 240,
+        "wires": [
+            [
+                "9cfb593386d452b0"
+            ]
+        ]
+    },
+    {
+        "id": "9cfb593386d452b0",
+        "type": "function",
+        "z": "2ddae0a3bd4d807a",
+        "name": "Get weather data from JSON",
+        "func": "const data_json = msg.payload\nlet rainfall\nif (data_json.hasOwnProperty(\"rain\")){\n    rainfall = data_json.rain[\"1h\"]\n} else {\n    rainfall = 0\n}\nmsg.payload = {\n    \"lat\": data_json.coord.lat,\n    \"lon\": data_json.coord.lon,\n    \"wind_sp\": data_json.wind.speed,\n    \"wind_deg\": data_json.wind.deg,\n    \"pressure\": data_json.main.pressure,\n    \"temp\": data_json.main.temp,\n    \"humid\":data_json.main.humidity,\n    \"cloud\": data_json.clouds.all,\n    \"rain\" : rainfall,\n    \"desc\": data_json.weather[0].description\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 240,
+        "y": 300,
+        "wires": [
+            [
+                "ef46b1e9615b196e",
+                "5bd5990c2ffb65cb"
+            ]
+        ]
+    },
+    {
+        "id": "ef46b1e9615b196e",
+        "type": "debug",
+        "z": "2ddae0a3bd4d807a",
+        "name": "Check JSON content",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "5bd5990c2ffb65cb",
+        "type": "template",
+        "z": "2ddae0a3bd4d807a",
+        "name": "INSERT",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "INSERT INTO weather_api(latitude, longitude, wind_sp, wind_deg, pressure, temperature, humidity, cloud_per, rain_amt, weather) VALUES ({{payload.lat}}, {{payload.lon}}, {{payload.wind_sp}}, {{payload.wind_sp}}, {{payload.pressure}}, {{payload.temp}}, {{payload.humid}}, {{payload.cloud}}, {{payload.rain}}, \"{{payload.desc}}\")",
+        "output": "str",
+        "x": 480,
+        "y": 240,
+        "wires": [
+            [
+                "d7ce8acdd9b29cf8"
+            ]
+        ]
+    },
+    {
+        "id": "d7ce8acdd9b29cf8",
+        "type": "mysql",
+        "z": "2ddae0a3bd4d807a",
+        "mydb": "b7aa8f17ce7a0edf",
+        "name": "kidbright db",
+        "x": 630,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0e3b74c68c372a9c",
+        "type": "inject",
+        "z": "2ddae0a3bd4d807a",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1800",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 160,
+        "wires": [
+            [
+                "4de92a26ee01d4b0"
+            ]
+        ]
+    },
+    {
+        "id": "b7aa8f17ce7a0edf",
+        "type": "MySQLdatabase",
+        "name": "helloworld db",
+        "host": "iot.cpe.ku.ac.th",
+        "port": "3306",
+        "db": "b6610545766",
+        "tz": "",
+        "charset": "UTF8"
+    }
+]

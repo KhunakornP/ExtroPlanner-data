@@ -1,0 +1,301 @@
+[
+    {
+        "id": "b4c439fac167f1ca",
+        "type": "tab",
+        "label": "Flow 6",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "7cbd6b988bc9e762",
+        "type": "http request",
+        "z": "b4c439fac167f1ca",
+        "name": "Request from Open Weather API",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://api.openweathermap.org/data/2.5/weather?lat={your_lat}&lon={your_lon}&appid={your_api_key}&units=metric",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 700,
+        "y": 180,
+        "wires": [
+            [
+                "5d38798487e804ea"
+            ]
+        ]
+    },
+    {
+        "id": "5d38798487e804ea",
+        "type": "json",
+        "z": "b4c439fac167f1ca",
+        "name": "Get JSON from API",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 430,
+        "y": 260,
+        "wires": [
+            [
+                "ee9ca1f6e412e9f6"
+            ]
+        ]
+    },
+    {
+        "id": "ee9ca1f6e412e9f6",
+        "type": "function",
+        "z": "b4c439fac167f1ca",
+        "name": "Get weather data from JSON",
+        "func": "const data_json = msg.payload\nlet rainfall\nif (data_json.hasOwnProperty(\"rain\")){\n    rainfall = data_json.rain[\"1h\"]\n} else {\n    rainfall = 0\n}\nmsg.payload = {\n    \"lat\": data_json.coord.lat,\n    \"lon\": data_json.coord.lon,\n    \"wind_sp\": data_json.wind.speed,\n    \"wind_deg\": data_json.wind.deg,\n    \"pressure\": data_json.main.pressure,\n    \"temp\": data_json.main.temp,\n    \"humid\":data_json.main.humidity,\n    \"cloud\": data_json.clouds.all,\n    \"rain\" : rainfall,\n    \"desc\": data_json.weather[0].description\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 360,
+        "wires": [
+            [
+                "c4be0214f660f1c9",
+                "b9d4a77ebad7ade7"
+            ]
+        ]
+    },
+    {
+        "id": "c4be0214f660f1c9",
+        "type": "debug",
+        "z": "b4c439fac167f1ca",
+        "name": "Check JSON content",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 740,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "b9d4a77ebad7ade7",
+        "type": "template",
+        "z": "b4c439fac167f1ca",
+        "name": "INSERT",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "INSERT INTO weather_api(latitude, longitude, wind_sp, wind_deg, pressure, temperature, humidity, cloud_per, rain_amt, weather) VALUES ({{payload.lat}}, {{payload.lon}}, {{payload.wind_sp}}, {{payload.wind_sp}}, {{payload.pressure}}, {{payload.temp}}, {{payload.humid}}, {{payload.cloud}}, {{payload.rain}}, \"{{payload.desc}}\")",
+        "output": "str",
+        "x": 700,
+        "y": 260,
+        "wires": [
+            [
+                "e8c0f67ed1b2e5fb"
+            ]
+        ]
+    },
+    {
+        "id": "e8c0f67ed1b2e5fb",
+        "type": "mysql",
+        "z": "b4c439fac167f1ca",
+        "mydb": "b7aa8f17ce7a0edf",
+        "name": "kidbright db",
+        "x": 870,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1a248f69a76d76aa",
+        "type": "mysql",
+        "z": "b4c439fac167f1ca",
+        "mydb": "b7aa8f17ce7a0edf",
+        "name": "kidbright db",
+        "x": 810,
+        "y": 500,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0d21ad0515c4362b",
+        "type": "template",
+        "z": "b4c439fac167f1ca",
+        "name": "INSERT",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "INSERT INTO weather_sensor(lat, lon, temp, humidity, co) VALUES ({{payload.lat}}, {{payload.lon}}, {{payload.temp}}, {{payload.humidity}}, {{payload.co}})",
+        "output": "str",
+        "x": 620,
+        "y": 500,
+        "wires": [
+            [
+                "1a248f69a76d76aa"
+            ]
+        ]
+    },
+    {
+        "id": "57f76d900974ab2e",
+        "type": "mqtt in",
+        "z": "b4c439fac167f1ca",
+        "name": "Read Environment",
+        "topic": "{your_MQTT_topic}",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "fad1c26427eb2bd5",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 370,
+        "y": 500,
+        "wires": [
+            [
+                "7de28724f1ba574d",
+                "0d21ad0515c4362b"
+            ]
+        ]
+    },
+    {
+        "id": "7de28724f1ba574d",
+        "type": "debug",
+        "z": "b4c439fac167f1ca",
+        "name": "Check MQTT content",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "a6218d3f4799c503",
+        "type": "inject",
+        "z": "b4c439fac167f1ca",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/30 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 330,
+        "y": 120,
+        "wires": [
+            [
+                "3eed76f0d02afb0f"
+            ]
+        ]
+    },
+    {
+        "id": "3eed76f0d02afb0f",
+        "type": "delay",
+        "z": "b4c439fac167f1ca",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "3",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 480,
+        "y": 120,
+        "wires": [
+            [
+                "7cbd6b988bc9e762"
+            ]
+        ]
+    },
+    {
+        "id": "66629a8bb3492b5c",
+        "type": "complete",
+        "z": "b4c439fac167f1ca",
+        "name": "",
+        "scope": [
+            "d699b12f17345f68"
+        ],
+        "uncaught": false,
+        "x": 310,
+        "y": 180,
+        "wires": [
+            [
+                "7cbd6b988bc9e762"
+            ]
+        ]
+    },
+    {
+        "id": "b7aa8f17ce7a0edf",
+        "type": "MySQLdatabase",
+        "name": "helloworld db",
+        "host": "iot.cpe.ku.ac.th",
+        "port": "3306",
+        "db": "b6610545766",
+        "tz": "",
+        "charset": "UTF8"
+    },
+    {
+        "id": "fad1c26427eb2bd5",
+        "type": "mqtt-broker",
+        "name": "KU-CPE-broker",
+        "broker": "iot.cpe.ku.ac.th",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    }
+]
